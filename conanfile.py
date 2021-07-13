@@ -3,7 +3,7 @@ from conans import ConanFile, AutoToolsBuildEnvironment, tools
 
 class LinuxGpibConan(ConanFile):
     name = "linux-gpib"
-    version = "4.2.0"
+    version = "4.3.4"
     license = "GPLv2"
     author = "Ralf Schulze <ralf.schulze@gmx.net>"
     url = "https://github.com/ralfschulze/conan-linux-gpib"
