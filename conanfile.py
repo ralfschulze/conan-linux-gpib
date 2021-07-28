@@ -11,10 +11,11 @@ class LinuxGpibConan(ConanFile):
     topics = ("linux", "gpib", "driver")
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False],
-               "static": [True, False],
                "fPIC": [True, False]}
-    default_options = {"shared": True, "static": False, "fPIC": True}
+    default_options = {"shared": True, "fPIC": True}
     generators = "cmake"
+    
+    _autotools = None
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -27,30 +28,33 @@ class LinuxGpibConan(ConanFile):
         tools.unzip(
             "linux-gpib-{v}/linux-gpib-user-{v}.tar.gz".format(v=self.version), strip_root=True)
 
-    def build(self):
+    def _configure_autotools(self):
+        if self._autotools:
+            return self._autotools
+
         args = []
         args.append("--disable-all-bindings")
 
         if self.options.shared:
             args.append("--enable-shared")
+            args.append("--disable-static")
         else:
             args.append("--disable-shared")
-    
-        if self.options.static:
             args.append("--enable-static")
-        else:
-            args.append("--disable-static")
 
-        autotools = AutoToolsBuildEnvironment(self)
-        autotools.fpic = self.options.fPIC
-        autotools.configure(args=args)
+        self._autotools = AutoToolsBuildEnvironment(self)
+        self._autotools.fpic = self.options.fPIC
+        self._autotools.configure(args=args)
+        
+        return self._autotools
+
+    def build(self):
+        autotools = self._configure_autotools()
         autotools.make()
-        autotools.install()
 
     def package(self):
-        self.copy("*.h", dst="include", src="hello")
-        self.copy("*.so", dst="lib", keep_path=False)
-        self.copy("*.a", dst="lib", keep_path=False)
+        autotools = self._configure_autotools()
+        autotools.install()
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
