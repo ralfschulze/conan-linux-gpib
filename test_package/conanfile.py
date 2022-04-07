@@ -17,9 +17,18 @@ class LinuxGpibTestConan(ConanFile):
     def imports(self):
         self.copy("*.dll", dst="bin", src="bin")
         self.copy("*.dylib*", dst="bin", src="lib")
-        self.copy('*.so*', dst='bin', src='lib')
+        self.copy("*.so*", dst="bin", src="lib")
 
     def test(self):
+
+        # Get 'gpib.conf' from 'linux-gpib' package folder to prevent error
+        # about missing 'gpib.conf'.
+        pkg_folder = self.deps_cpp_info["linux-gpib"].rootpath
+
         if not tools.cross_building(self):
-            os.chdir("bin")
-            self.run(".%sexample" % os.sep)
+            with tools.environment_append(
+                {"IB_CONFIG": "{p}/etc/gpib.conf".format(p=pkg_folder)}
+            ):
+                os.chdir("bin")
+                self.run("env")
+                self.run(".%sexample" % os.sep)
