@@ -30,5 +30,4 @@ class LinuxGpibTestConan(ConanFile):
                 {"IB_CONFIG": "{p}/etc/gpib.conf".format(p=pkg_folder)}
             ):
                 os.chdir("bin")
-                self.run("env")
                 self.run(".%sexample" % os.sep)
