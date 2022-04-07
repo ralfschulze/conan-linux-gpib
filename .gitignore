@@ -1,1 +1,4 @@
+/venv/
+/_*/
+/.vscode/
 /test_package/build/
