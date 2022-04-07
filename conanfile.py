@@ -10,11 +10,10 @@ class LinuxGpibConan(ConanFile):
     description = "Linux GPIB driver library"
     topics = ("linux", "gpib", "driver")
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False],
-               "fPIC": [True, False]}
+    options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
     generators = "cmake"
-    
+
     _autotools = None
 
     def config_options(self):
@@ -22,17 +21,22 @@ class LinuxGpibConan(ConanFile):
             del self.options.fPIC
 
     def source(self):
-        url = "https://sourceforge.net/projects/linux-gpib/files/linux-gpib%20for%203.x.x%20and%202.6.x%20kernels/"\
+        url = (
+            "https://sourceforge.net/projects/linux-gpib/files/linux-gpib%20for%203.x.x%20and%202.6.x%20kernels/"
             "{v}/linux-gpib-{v}.tar.gz".format(v=self.version)
+        )
         tools.get(url)
         tools.unzip(
-            "linux-gpib-{v}/linux-gpib-user-{v}.tar.gz".format(v=self.version), strip_root=True)
+            "linux-gpib-{v}/linux-gpib-user-{v}.tar.gz".format(v=self.version),
+            strip_root=True,
+        )
 
     def _configure_autotools(self):
         if self._autotools:
             return self._autotools
 
         args = []
+        args.append("--sysconfdir=/etc")
         args.append("--disable-all-bindings")
 
         if self.options.shared:
@@ -45,7 +49,7 @@ class LinuxGpibConan(ConanFile):
         self._autotools = AutoToolsBuildEnvironment(self)
         self._autotools.fpic = self.options.fPIC
         self._autotools.configure(args=args)
-        
+
         return self._autotools
 
     def build(self):
@@ -54,7 +58,12 @@ class LinuxGpibConan(ConanFile):
 
     def package(self):
         autotools = self._configure_autotools()
-        autotools.install()
+
+        # Install 'gpib.conf' to conan package folder, but programs should
+        # later use '/etc/gpib.conf'
+        env_vars = autotools.vars
+        env_vars["sysconfdir"] = "{p}/etc/".format(p=self.package_folder)
+        autotools.install(vars=env_vars, args=["--environment-overrides"])
 
     def package_info(self):
         self.cpp_info.libs = tools.collect_libs(self)
